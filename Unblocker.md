@@ -3,7 +3,7 @@ The easiest and cheapest unblocker u can find
 ## Installation
 
 
-1. Logout[pip](chrome://settings/signOut) of ur chrome account
+1. Logout[pip](https://setting.com) of ur chrome account
 2. After signing out make sure to open the link, IF IT FULLY RESTARTED TRY AGAIN chrome://restart
 3. Add ur account back by using this link - https://tinyurl.com/addsession
 4. Clean ur history ( FOR SAFTEY )
