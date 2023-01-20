@@ -1,8 +1,11 @@
-#Ed Puzzle - CHEATS
+# Ed Puzzle - CHEATS
 1. Open ur website console ( CTRL+I )
 2. Copy all of the code below 
 3. Paste it in the console and enter
 
+## Working for edpuzzle.com
+Up to date
+### Code
 var popup = null;
 var base_url;
 if (typeof document.dev_env != "undefined") {
