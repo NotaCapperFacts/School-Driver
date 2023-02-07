@@ -16,21 +16,80 @@ else {
   base_url = "https://raw.githubusercontent.com/ading2210/edpuzzle-answers/main";
 }
 
-function http_get(url, callback) {
+function http_get(url, callback, headers=[], method="GET", content=null) {
   var request = new XMLHttpRequest();
   request.addEventListener("load", callback);
-  request.open("GET", url, true);
-  request.send();
+  request.open(method, url, true);
+
+  if (window.__EDPUZZLE_DATA__ && window.__EDPUZZLE_DATA__.token) {
+    headers.push(["authorization", window.__EDPUZZLE_DATA__.token]);
+  }
+  for (const header of headers) {
+    request.setRequestHeader(header[0], header[1]);
+  }
+  
+  request.send(content);
 }
 
 function init() {
-  if (!(/https{0,1}:\/\/edpuzzle.com\/assignments\/[a-f0-9]{1,30}\/watch/).test(window.location.href
-  )) {
-    alert("Please run this script on an Edpuzzle assignment. For reference, the URL should look like this:\nhttps://edpuzzle.com/assignments/{ASSIGNMENT_ID}/watch")
-    return;
+  if (window.location.hostname == "edpuzzle.hs.vc") {
+    alert("To use this, drag this button into your bookmarks bar. Then, run it when you're on an Edpuzzle assignment.");
   }
-  
-  getAssignment();
+  else if ((/https{0,1}:\/\/edpuzzle.com\/assignments\/[a-f0-9]{1,30}\/watch/).test(window.location.href)) {
+    getAssignment();
+  }
+  else if (window.canvasReadyState) {
+    handleCanvasURL();
+  }
+  else if (window.schoologyMoreLess) {
+    handleSchoologyURL();
+  }
+  else {
+    alert("Please run this script on an Edpuzzle assignment. For reference, the URL should look like this:\nhttps://edpuzzle.com/assignments/{ASSIGNMENT_ID}/watch");
+  }
+}
+
+function handleCanvasURL() {
+  let location_split = window.location.href.split("/");
+  let url = `/api/v1/courses/${location_split[4]}/assignments/${location_split[6]}`;
+  http_get(url, function(){
+    let data = JSON.parse(this.responseText);
+    let url2 = data.url;
+
+    http_get(url2, function() {
+      let data = JSON.parse(this.responseText);
+      let url3 = data.url;
+
+      alert(`Please re-run this script in the newly opened tab. If nothing happens after pressing "ok", then allow popups on Canvas and try again.`);
+      open(url3);
+    });
+  });
+}
+
+function handleSchoologyURL() {
+  let assignment_id = window.location.href.split("/")[4];
+  let url = `/external_tool/${assignment_id}/launch/iframe`;
+  http_get(url, function() {
+    alert(`Please re-run this script in the newly opened tab. If nothing happens after pressing "ok", then allow popups on Schoology and try again.`);
+
+    //strip js tags from response and add to dom
+    let html = this.responseText.replace(/<script[\s\S]+?<\/script>/, ""); 
+    let div = document.createElement("div");
+    div.innerHTML = html;
+    let form = div.querySelector("form");
+    
+    let input = document.createElement("input")
+    input.setAttribute("type", "hidden");
+    input.setAttribute("name", "ext_submit");
+    input.setAttribute("value", "Submit");
+    form.append(input);
+    document.body.append(div);
+
+    //submit form in new tab
+    form.setAttribute("target", "_blank");
+    form.submit();
+    div.remove();
+  });
 }
 
 function getAssignment(callback) {
@@ -71,6 +130,7 @@ function openPopup(assignment) {
   }
   
   var base_html = `
+  <!DOCTYPE html>
   <head>
     <style>
       * {font-family: Arial}
@@ -96,11 +156,13 @@ function openPopup(assignment) {
           }
         });
       }
-      get_tag("style", base_url+"/popup.css");
-      get_tag("script", base_url+"/popup.js");
-      get_tag("script", base_url+"/videooptions.js");
+      get_tag("style", base_url+"/app/popup.css");
+      get_tag("script", base_url+"/app/popup.js");
+      get_tag("script", base_url+"/app/videooptions.js");
+      get_tag("script", base_url+"/app/videospeed.js");
     </script>
     <title>Answers for: ${media.title}</title>
+  </head>
   <div id="header_div">
     <div>
       <img src="${thumbnail}" height="108px">
@@ -139,12 +201,14 @@ function openPopup(assignment) {
     <p style="font-size: 12px" id="loading_text"></p>
   </div>
   <hr>
-  <p style="font-size: 12px">Made by: <a target="_blank" >unknown</a> | Website: <a target="_blank" href="">unknown</a> | Source code: <a target="_blank" href="">notme</a>`;
+  <p style="font-size: 12px">Made by: <a target="_blank" href="https://github.com/ading2210">ading2210</a> on Github | Website: <a target="_blank" href="https://edpuzzle.hs.vc">edpuzzle.hs.vc</a> | Source code: <a target="_blank" href="https://github.com/ading2210/edpuzzle-answers">ading2210/edpuzzle-answers</a></p>
+  <p style="font-size: 12px">Licenced under the <a target="_blank" href="https://github.com/ading2210/edpuzzle-answers/blob/main/LICENSE">GNU GPL v3</a>. Do not reupload or redistribute without abiding by those terms.</p>`;
   popup = window.open("about:blank", "", "width=600, height=400");
   popup.document.write(base_html);
 
   popup.document.assignment = assignment;
   popup.document.dev_env = document.dev_env;
+  popup.document.edpuzzle_data = window.__EDPUZZLE_DATA__;
 
   getMedia(assignment);
 }
@@ -286,4 +350,4 @@ function parseQuestions(questions) {
   popup.questions = questions;
 }
 
-init()
+init();
